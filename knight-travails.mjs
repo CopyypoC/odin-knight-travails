@@ -1,38 +1,3 @@
-// Board - 2D Array
-// Graph structure:
-//  - Vertex is a subarray that represents a coordinate
-//  - No explicit edges, moving from one vertex to another
-//    is like an implicit edge
-// Adjacency list to track moves:
-//  - Array of linked lists
-//  - The list represents the full move order of a certain
-//    path taken
-//  - Try every move order and return the shortest linked list
-// [
-//   (vertex1) -> (vertex2) -> (vertex3)
-//   (vertex7) -> (vertex12) -> (vertex4)
-// ]
-// Search algorithm:
-//  - Breadth first search, goes to all adjacent nodes first,
-//    used in the level order binary search
-//  - All possible moves are the adjacent nodes
-// [
-//   [0,0], [0,1] ... [0,7]
-//   [1,0], [1,1] ... [1,7]
-//   ...
-//   [7,0], [7,1] ... [7,7]
-// ]
-
-// Adjacency list array of linked lists
-// Root nodes for linked lists are the initial possible moves.
-// Every child/adjacent node from the initial get added to
-// those linked lists.
-// The first linked list that gets to the end is returned as
-// the route to go from start to end.
-
-// Need a way to track which linked list I'm currently in so
-// I can add the node to correct list.
-
 // x and y are between 0 and 7 for 8x8 chess board
 function isValidMove([x, y]) {
   if (x >= 0 && x <= 7 && y >= 0 && y <= 7) {
@@ -57,6 +22,9 @@ export function knightMoves(start, end) {
   while (queue.length !== 0) {
     x = queue[0][0];
     y = queue[0][1];
+
+    // At the end point, reconstruct the path using the chain of
+    // coordinates saved in the routes Map
     if (x === end[0] && y === end[1]) {
       const path = [];
       curr = JSON.stringify(end);
@@ -65,7 +33,8 @@ export function knightMoves(start, end) {
         path.unshift(curr);
         curr = routes.get(curr);
       }
-      return path;
+
+      return path.map((coord) => JSON.parse(coord));
     }
     // Shifting for all possible moves.
     // x and y are the shifts. Start at 1 and 2
@@ -89,7 +58,15 @@ export function knightMoves(start, end) {
       let nextCoord = [x + xShift, y + yShift];
       if (isValidMove(nextCoord) && !visited.has(JSON.stringify(nextCoord))) {
         queue.push(nextCoord);
+        // Each array is a reference or pointer to a specific instance,
+        // so each new array will point to a different one even if 2
+        // hold the same values. Convert them to strings instead so
+        // the unique value checking actually works.
         visited.add(JSON.stringify(nextCoord));
+        // To create the path the knight takes, store the current
+        // move as the value of the next move. This allows for
+        // backward movement from the end of the path to the start
+        // by continually finding the parent node.
         routes.set(JSON.stringify(nextCoord), JSON.stringify(curr));
       }
 
