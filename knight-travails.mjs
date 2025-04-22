@@ -13,7 +13,7 @@
 //   (vertex7) -> (vertex12) -> (vertex4)
 // ]
 // Search algorithm:
-//  - Breadth first search, goes to all adjacent nodes first
+//  - Breadth first search, goes to all adjacent nodes first,
 //    used in the level order binary search
 //  - All possible moves are the adjacent nodes
 // [
@@ -23,25 +23,26 @@
 //   [7,0], [7,1] ... [7,7]
 // ]
 
-// Shifting
-//  +x, +y 0
-//  +x, -y 1 *
-//  -x, +y 2
-//  -x, -y 3 *
-//  +x, +y 4
-//  +x, -y 5 *
-//  -x, +y 6
-//  -x, -y 7 *
+// Adjacency list array of linked lists
+// Root nodes for linked lists are the initial possible moves.
+// Every child/adjacent node from the initial get added to
+// those linked lists.
+// The first linked list that gets to the end is returned as
+// the route to go from start to end.
 
-// Start and end are arrays that hold the vertex/coordinate
-// i.e. [0,0] for upper left corner of the board
-function isValidMove(x, y) {
+// Need a way to track which linked list I'm currently in so
+// I can add the node to correct list.
+
+// x and y are between 0 and 7 for 8x8 chess board
+function isValidMove([x, y]) {
   if (x >= 0 && x <= 7 && y >= 0 && y <= 7) {
     return true;
   }
   return false;
 }
 
+// Start and end are arrays that hold the vertex/coordinate
+// i.e. [0,0] for upper left corner of the board
 export function knightMoves(start, end) {
   let curr = start;
   let x = curr[0];
@@ -50,8 +51,22 @@ export function knightMoves(start, end) {
   let yShift = 0;
   const queue = [curr];
   const visited = new Set();
+  const routes = new Map();
+  visited.add(JSON.stringify(curr));
 
   while (queue.length !== 0) {
+    x = queue[0][0];
+    y = queue[0][1];
+    if (x === end[0] && y === end[1]) {
+      const path = [];
+      curr = JSON.stringify(end);
+
+      while (curr) {
+        path.unshift(curr);
+        curr = routes.get(curr);
+      }
+      return path;
+    }
     // Shifting for all possible moves.
     // x and y are the shifts. Start at 1 and 2
     // * = flip x
@@ -71,12 +86,11 @@ export function knightMoves(start, end) {
     xShift = 1;
     yShift = 2;
     for (let i = 0; i < 8; i++) {
-      if (
-        isValidMove(x + xShift, y + yShift) &&
-        !visited.has(JSON.stringify([x + xShift, y + yShift]))
-      ) {
-        queue.push([x + xShift, y + yShift]);
-        visited.add(JSON.stringify([x + xShift, y + yShift]));
+      let nextCoord = [x + xShift, y + yShift];
+      if (isValidMove(nextCoord) && !visited.has(JSON.stringify(nextCoord))) {
+        queue.push(nextCoord);
+        visited.add(JSON.stringify(nextCoord));
+        routes.set(JSON.stringify(nextCoord), JSON.stringify(curr));
       }
 
       yShift *= -1;
@@ -87,18 +101,9 @@ export function knightMoves(start, end) {
       }
     }
 
-    x = queue[0][0];
-    y = queue[0][1];
-    if (x === end[0] && y === end[1]) {
-      console.log(`Moved to [${x}, ${y}]`);
-      return;
-    }
     queue.shift();
     curr = queue[0];
     x = curr[0];
     y = curr[1];
-    console.log(`Moved to [${x}, ${y}]`);
   }
-  // Loop through queue until first item is not in the Set
-  // Then curr is next queue item
 }
