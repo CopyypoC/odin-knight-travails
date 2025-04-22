@@ -23,39 +23,7 @@
 //   [7,0], [7,1] ... [7,7]
 // ]
 
-// x - 2, y - 1, y + 1
-// 2,2 -> 0,1
-// 2,2 -> 0,3
-
-// x - 1, x + 1, y + 2
-// 2,2 -> 1,4
-// 2,2 -> 3,4
-
-// x + 2, y + 1, y - 1
-// 2,2 -> 4,3
-// 2,2 -> 4,1
-
-// x - 1, x + 1, y - 2
-// 2,2 -> 1,0
-// 2,2 -> 3,0
-// ------- Grouping ---------
-// x - 1, y +- 2
-// 1,0 | 1,4
-
-// x - 2, y +- 1
-// 0,1 | 0,3
-
-// x + 1, y +- 2
-// 3,0 | 3,4
-
-// x + 2, y +- 1
-// 4,3 | 4,1
-
-// Valid checker: x >= 0, y <= 7
-
-// x +- 1, y +- 2
-// x *= -1, y *= -1 to flip ints
-// for loop 4 times
+// Shifting
 //  +x, +y 0
 //  +x, -y 1 *
 //  -x, +y 2
@@ -63,9 +31,7 @@
 //  +x, +y 4
 //  +x, -y 5 *
 //  -x, +y 6
-//  -x, -y 7
-// x +-2, y +- 1
-// for loop 4 times
+//  -x, -y 7 *
 
 // Start and end are arrays that hold the vertex/coordinate
 // i.e. [0,0] for upper left corner of the board
@@ -84,11 +50,24 @@ export function knightMoves(start, end) {
   let yShift = 0;
   const queue = [curr];
   const visited = new Set();
-  const notAtEnd = x !== end[0] && y !== end[1];
 
-  while (queue.length !== 0 && notAtEnd) {
-    // 8x8 (-) check for 0 lower bound
-    //     (+) check for 7 upper bound
+  while (queue.length !== 0) {
+    // Shifting for all possible moves.
+    // x and y are the shifts. Start at 1 and 2
+    // * = flip x
+    //  +x, +y 0
+    //  +x, -y 1 *
+    //  -x, +y 2
+    //  -x, -y 3 * x and y swap to 2 and 1
+    //  +x, +y 4
+    //  +x, -y 5 *
+    //  -x, +y 6
+    //  -x, -y 7 *
+    // Possible moves are x ± 1, y ± 2 and x ± 2, y ± 1.
+    // This loop is organized to flip yShift every iteration
+    // and flip xShift every other iteration. Breakpoint
+    // set at i = 3 to swap x and y shift to 2 and 1
+    // instead of 1 and 2 to get the last 4 moves.
     xShift = 1;
     yShift = 2;
     for (let i = 0; i < 8; i++) {
@@ -97,6 +76,7 @@ export function knightMoves(start, end) {
         !visited.has(JSON.stringify([x + xShift, y + yShift]))
       ) {
         queue.push([x + xShift, y + yShift]);
+        visited.add(JSON.stringify([x + xShift, y + yShift]));
       }
 
       yShift *= -1;
@@ -107,19 +87,13 @@ export function knightMoves(start, end) {
       }
     }
 
-    // if (x - 1 >= 0 && y + 2 <= 7) queue.push([x - 1, y + 2]);
-    // if (x - 1 >= 0 && y - 2 >= 0) queue.push([x - 1, y - 2]);
-
-    // if (x - 2 >= 0 && y + 1 <= 7) queue.push([x - 2, y + 1]);
-    // if (x - 2 >= 0 && y - 1 >= 0) queue.push([x - 2, y - 1]);
-
-    // if (x + 1 <= 7 && y + 2 <= 7) queue.push([x + 1, y + 2]);
-    // if (x + 1 <= 7 && y - 2 >= 0) queue.push([x + 1, y - 2]);
-
-    // if (x + 2 <= 7 && y + 1 <= 7) queue.push([x + 2, y + 1]);
-    // if (x + 2 <= 7 && y - 1 >= 0) queue.push([x + 2, y - 1]);
-
-    visited.add(JSON.stringify(queue.shift()));
+    x = queue[0][0];
+    y = queue[0][1];
+    if (x === end[0] && y === end[1]) {
+      console.log(`Moved to [${x}, ${y}]`);
+      return;
+    }
+    queue.shift();
     curr = queue[0];
     x = curr[0];
     y = curr[1];
